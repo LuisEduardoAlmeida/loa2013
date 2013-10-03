@@ -1,0 +1,264 @@
+unit programa;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, StdCtrls, Buttons, CheckLst, ComCtrls, DB, ADODB,
+  DBTables, Grids, DBGrids;
+
+type
+  TfrmPrograma = class(TForm)
+    Shape1: TShape;
+    Shape2: TShape;
+    Label1: TLabel;
+    Shape3: TShape;
+    SpeedButton1: TSpeedButton;
+    Shape4: TShape;
+    txtConsulta: TEdit;
+    Label3: TLabel;
+    Label4: TLabel;
+    txtCodigoConsulta: TEdit;
+    txtDescricao: TEdit;
+    Label2: TLabel;
+    Bevel1: TBevel;
+    cmbTipo: TComboBox;
+    Label5: TLabel;
+    Label6: TLabel;
+    Shape5: TShape;
+    btnNew: TSpeedButton;
+    btnSave: TSpeedButton;
+    btnDelete: TSpeedButton;
+    btnCancel: TSpeedButton;
+    btnPrint: TSpeedButton;
+    Bevel2: TBevel;
+    DBGrid: TDBGrid;
+    qry: TADOQuery;
+    sQry: TDataSource;
+    chbAll: TCheckBox;
+    btnRefresh: TSpeedButton;
+    Label8: TLabel;
+    txtCodigo: TEdit;
+    stp: TADOStoredProc;
+    chbAlfa: TCheckBox;
+    Bevel3: TBevel;
+    txtObjetivo: TMemo;
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure clearControls();
+    procedure keyExit();
+    procedure DBGridCellClick(Column: TColumn);
+    procedure txtCodigoConsultaExit(Sender: TObject);
+    procedure btnRefreshClick(Sender: TObject);
+    procedure txtConsultaExit(Sender: TObject);
+    procedure txtDescricaoChange(Sender: TObject);
+    procedure isItChanged();
+    procedure save();
+    procedure DBGridEnter(Sender: TObject);
+    procedure btnNewClick(Sender: TObject);
+    procedure btnSaveClick(Sender: TObject);
+    procedure btnCancelClick(Sender: TObject);
+    procedure btnDeleteClick(Sender: TObject);
+    procedure btnPrintClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  frmPrograma: TfrmPrograma;
+  theOperation : char;
+  itsChanged : boolean;
+
+implementation
+
+uses data, acaoList, programaList;
+
+{$R *.dfm}
+
+procedure TfrmPrograma.SpeedButton1Click(Sender: TObject);
+begin
+  close;
+end;
+
+procedure TfrmPrograma.FormActivate(Sender: TObject);
+begin
+  btnRefreshClick(nil);
+  clearControls();
+  dbGrid.setFocus;
+end;
+
+procedure TfrmPrograma.clearControls;
+begin
+  theOperation := '*';
+  txtCodigo.text := '';
+  txtCodigoConsulta.text := '';
+  txtConsulta.text := '';
+  txtDescricao.text := '';
+  txtObjetivo.text := '';
+  cmbTipo.text := '';
+  cmbTipo.itemIndex := -1;
+
+  txtCodigo.readOnly := true;
+end;
+
+procedure TfrmPrograma.keyExit;
+begin
+  clearControls();
+  theOperation := 'a';
+  with qry do begin
+    txtDescricao.text := fieldByName('descricao').asString;
+    txtObjetivo.text := fieldByName('objetivo').asString;
+    txtCodigo.text := fieldByName('codigo').asString;
+
+    with dmtData do begin
+      setComboBox(fieldByName('tipo').asString, cmbTipo);
+    end;
+  end;
+  itsChanged := false;
+end;
+
+procedure TfrmPrograma.DBGridCellClick(Column: TColumn);
+begin
+  isItChanged();
+  keyExit();
+end;
+
+procedure TfrmPrograma.txtCodigoConsultaExit(Sender: TObject);
+begin
+  if trim(txtCodigoConsulta.text) = '' then exit;
+  if not qry.Locate('codigo',txtCodigoConsulta.text,[]) then begin
+     showMessage('Código do Programa Inválido');
+     txtCodigoConsulta.setFocus;
+     exit;
+  end;
+  keyExit();
+end;
+
+procedure TfrmPrograma.btnRefreshClick(Sender: TObject);
+begin
+  with qry, qry.SQL do begin
+    close;
+    clear;
+    add('SELECT * FROM programa ORDER BY descricao');
+    open;
+  end;
+end;
+
+procedure TfrmPrograma.txtConsultaExit(Sender: TObject);
+begin
+  if trim(txtConsulta.text) = '' then exit;
+  with qry, qry.SQL do begin
+    close;
+    clear;
+    if chbAll.checked then
+       add('SELECT * FROM programa WHERE descricao LIKE(''%'+txtConsulta.text+'%'')')
+    else add('SELECT * FROM programa WHERE descricao LIKE('''+txtConsulta.text+'%'')');
+    open;
+    if qry.eof then begin
+       showMessage('Consulta Inválida');
+       exit;
+    end;
+  end;
+  keyExit();
+end;
+
+procedure TfrmPrograma.txtDescricaoChange(Sender: TObject);
+begin
+  itsChanged := true;
+end;
+
+procedure TfrmPrograma.isItChanged;
+begin
+  if theOperation = '*' then exit;
+  if itsChanged then
+     if application.messageBox('Você iniciou uma edição no registro atual. Deseja salvar as alterações ?','',MB_ICONQUESTION+MB_YESNO) = IDYES then save();
+  end;
+
+
+procedure TfrmPrograma.save;
+begin
+  if trim(txtDescricao.text) = '' then begin
+     showMessage('Falta preencher campo descrição');
+     exit;
+  end;
+
+  if (copy(cmbTipo.text,1,1) = 'F') OR
+     (copy(cmbTipo.text,1,1) = 'A') OR
+     (copy(cmbTipo.text,1,1) = 'S') OR
+     (copy(cmbTipo.text,1,1) = 'G') then
+  else begin
+     showMessage('Tipo do Programa Inválido');
+     exit;
+  end;
+
+  with stp, stp.parameters do begin
+    paramByName('@p_operation').value := theOperation;
+    paramByName('@p_codigo').value := txtCodigo.text;
+    paramByName('@p_descricao').value := txtDescricao.text;
+    paramByName('@p_tipo').value := copy(cmbTipo.text,1,1);
+    paramByName('@p_objetivo').value := txtObjetivo.text;
+    execProc;
+    if paramByName('@return_value').value = 0 then showMessage('Alteração Rejeitada');
+
+  end;
+  with qry do begin
+    close;
+    open;
+    if theOperation <> 'e' then Locate('codigo',txtCodigo.text,[]);
+  end;
+
+  clearControls();
+end;
+
+procedure TfrmPrograma.DBGridEnter(Sender: TObject);
+begin
+  isItChanged();
+end;
+
+procedure TfrmPrograma.btnNewClick(Sender: TObject);
+begin
+  isItChanged();
+  clearControls();
+  theOperation := 'i';
+  txtCodigo.readOnly := false;
+  txtCodigo.setFocus;
+end;
+
+procedure TfrmPrograma.btnSaveClick(Sender: TObject);
+begin
+  save();
+end;
+
+procedure TfrmPrograma.btnCancelClick(Sender: TObject);
+begin
+  clearControls;
+end;
+
+procedure TfrmPrograma.btnDeleteClick(Sender: TObject);
+begin
+  if theOperation = 'a' then
+     if application.messageBox('Você tem certeza que deseja excluir o registro corrente?','Confirmação de Exclusão',MB_ICONQUESTION+MB_YESNO) = IDNO then exit
+     else begin
+          theOperation := 'e';
+          save();
+          exit;
+     end;
+  btnCancelClick(nil);
+end;
+
+procedure TfrmPrograma.btnPrintClick(Sender: TObject);
+begin
+  Application.CreateForm(TfrmProgramaList, frmProgramaList);
+  if chbAlfa.checked then
+     with frmProgramaList.qry do begin
+       close;
+       SQL[8] := 'ORDER BY descricao';
+       open;
+     end;
+  frmProgramaList.report.preview;
+  frmProgramaList.free;
+end;
+
+end.

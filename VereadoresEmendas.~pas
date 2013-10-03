@@ -1,0 +1,424 @@
+unit VereadoresEmendas;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls, Grids, DBGrids, DBCtrls, DB, ADODB;
+
+type
+  TFrmVereadoresEmendas = class(TForm)
+    pnEmenda: TPanel;
+    btFechar: TButton;
+    dsVE_: TDataSource;
+    qyVE_: TADOQuery;
+    qyVE_Codigo: TAutoIncField;
+    qyVE_Codigo_Vereador: TIntegerField;
+    qyVE_Emenda: TStringField;
+    qyVE_Colocacao: TIntegerField;
+    qyVereadores_: TADOQuery;
+    qyVereadores_Codigo: TAutoIncField;
+    qyVereadores_Nome: TStringField;
+    qyVereadores_Partido_Sigla: TStringField;
+    qyVereadores_Condicao: TStringField;
+    qyVereadores_Comentario: TStringField;
+    qyVereadores_DtCadastro: TDateTimeField;
+    qyVE_Vereador: TStringField;
+    edCod: TEdit;
+    cbPesq: TComboBox;
+    edEmenda: TEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    btAdicionar: TButton;
+    btCancelar: TButton;
+    btExcluir: TButton;
+    Bevel1: TBevel;
+    DBGrid1: TDBGrid;
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure btFecharClick(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure cbPesqChange(Sender: TObject);
+    procedure cbPesqExit(Sender: TObject);
+    procedure edCodExit(Sender: TObject);
+    procedure btAdicionarClick(Sender: TObject);
+    procedure btCancelarClick(Sender: TObject);
+    procedure btExcluirClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure DBGrid1DblClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    NumEmenda : String;
+    Procedure Pesq(Text:String);
+  end;
+
+var
+  FrmVereadoresEmendas: TFrmVereadoresEmendas;
+
+implementation
+
+uses Emendas, data, EmendasPorAcrescimo, EmendasNew, EmendasGeral;
+
+{$R *.dfm}
+
+procedure TFrmVereadoresEmendas.Pesq(Text: String);
+Var
+  I : Integer;
+begin
+   I := 0;
+
+   qyVereadores_.Close;
+   qyVereadores_.SQL.Clear;
+   qyVereadores_.SQL.Add('SELECT * FROM VEREADORES');
+
+   If Trim(Text)='' Then
+   Begin
+      cbPesq.Clear;
+      qyVereadores_.SQL.Add('ORDER BY Nome');
+      qyVereadores_.ExecSQL;
+      qyVereadores_.Open;
+      qyVereadores_.FIRST;
+
+      While not qyVereadores_.Eof do
+      Begin
+         cbPesq.Items.Add(qyVereadores_.Fieldbyname('NOME').AsString);
+         qyVereadores_.Next;
+      End;
+      Exit;
+   End;
+
+   If Trim(Text)<>'' Then
+   Begin
+
+      Try
+          StrToInt(Text);
+          qyVereadores_.SQL.Add('WHERE CODIGO = :CODIGO');
+          qyVereadores_.Parameters.ParamByName('CODIGO').Value := StrToInt(TEXT);
+      Except
+          qyVereadores_.SQL.Add('WHERE NOME like :NOME');
+          qyVereadores_.Parameters.ParamByName('NOME').Value := '%'+TEXT+'%';
+      END;
+
+      qyVereadores_.SQL.Add('Order by nome');
+      qyVereadores_.ExecSQL;
+      qyVereadores_.Open;
+
+      If qyVereadores_.RecordCount = 0 Then
+      Begin
+         ShowMessage('OBJETO PESQUISADO NÃO ENCONTRADO. PESQUISE NOVAMENTE!');
+         edCod.SetFocus;
+         EXIT;
+      End;
+
+   End;
+
+   edCod.Text  := qyVereadores_.Fieldbyname('CODIGO').AsString;
+   cbPesq.Text := qyVereadores_.Fieldbyname('NOME').AsString;
+end;
+
+
+procedure TFrmVereadoresEmendas.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+   Action               := caFree;
+   FrmVereadoresEmendas := Nil;
+end;
+
+procedure TFrmVereadoresEmendas.FormKeyPress(Sender: TObject;
+  var Key: Char);
+begin
+   If key = #13 Then
+   Begin
+      Perform(WM_NEXTDLGCTL,0,0);
+      Key :=#0;
+   End;
+end;
+
+procedure TFrmVereadoresEmendas.btFecharClick(Sender: TObject);
+begin
+   Close;
+end;
+
+procedure TFrmVereadoresEmendas.FormActivate(Sender: TObject);
+begin
+   pnEmenda.Caption := NumEmenda;
+
+   edEmenda.Text := NumEmenda;
+
+   qyVE_.Close;
+   qyVE_.Parameters.ParamByName('Emenda').Value := NumEmenda;
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+   
+
+   {If qyVE_.RecordCount > 0 Then
+   Begin
+      ShowMessage('Já Existe Vereador para esta Emenda');
+      btAdicionar.Enabled := False;
+      Exit;
+   End;
+   }
+
+   //Pesq('');
+
+   //edCod.Text := qyVE_Codigo_Vereador.AsString;
+   //edCod.OnExit(NIL);
+
+
+   IF qyVE_.RecordCount > 0 THEN
+   BEGIN
+      edCod.Text := qyVE_Codigo_Vereador.AsString;
+      edCod.OnExit(NIL);
+
+      edCod.Enabled       := false;
+      cbPesq.Enabled      := false;
+      btAdicionar.Enabled := False;
+      btCancelar.Enabled  := false;
+
+   END
+   Else
+      Pesq('');
+
+
+end;
+
+procedure TFrmVereadoresEmendas.cbPesqChange(Sender: TObject);
+begin
+   //Pesq(cbPesq.Text);
+end;
+
+procedure TFrmVereadoresEmendas.cbPesqExit(Sender: TObject);
+begin
+   Pesq(cbPesq.Text);
+   If Trim(edCod.Text) <> '' Then
+   BEGIN
+       btAdicionar.Enabled := True;
+       btAdicionar.SetFocus;
+   END;
+
+end;
+
+procedure TFrmVereadoresEmendas.edCodExit(Sender: TObject);
+begin
+   Pesq(edCod.Text);
+   If Trim(edCod.Text) <> '' Then
+   BEGIN
+       btAdicionar.Enabled := True;
+       btAdicionar.SetFocus;
+   END;
+end;
+
+procedure TFrmVereadoresEmendas.btAdicionarClick(Sender: TObject);
+begin
+   qyVE_.Close;
+   qyVE_.SQL.Clear;
+   qyVE_.SQL.Add('SELECT * FROM VEREADORES_EMENDAS');
+   qyVE_.SQL.Add('WHERE EMENDA = :EMENDA');
+   qyVE_.SQL.Add('and CODIGO_VEREADOR = :VEREADOR');
+   qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+   qyVE_.Parameters.ParamByName('VEREADOR').Value := StrToInt(edCod.Text);
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+
+   if qyVE_.RecordCount > 0 then
+   Begin
+      ShowMessage('Vereador já Cadastrado nesta Emenda!!!');
+      edCod.SetFocus;
+      exit;
+   End;
+
+
+   If Trim(edEmenda.Text) = '' Then
+   Begin
+      ShowMessage('O Número da Emenda tem que existir!!!');
+      Exit;
+   End;
+   If Trim(edCod.Text) = '' Then
+   Begin
+      ShowMessage('Informe o Vereador a ser adicionado a esta Emenda!!!');
+      Exit;
+   End;
+
+   qyVE_.Close;
+   qyVE_.SQL.Clear;
+   qyVE_.SQL.Add('SELECT * FROM VEREADORES_EMENDAS');
+   qyVE_.SQL.Add('WHERE EMENDA = :EMENDA');
+   qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+
+   If qyVE_.RecordCount > 0 Then
+   Begin
+      ShowMessage('Já existe um Vereador para esta emenda.');
+      cbPesq.SetFocus;
+      Exit;
+   End;
+
+
+   if application.messageBox('Confirma a Inclusão do Registro ?','INCLUSÃO',
+      MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+
+   qyVE_.Insert;
+   qyVE_Codigo_Vereador.Value := StrToInt(edCod.Text);
+   qyVE_Emenda.Value          := NumEmenda;
+   qyVE_.Post;
+
+
+   qyVE_.Close;
+   qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+
+   IF frmEmendasNew <> nil then
+   Begin
+       frmEmendasNew.qyVE_.Close;
+       frmEmendasNew.qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+       frmEmendasNew.qyVE_.ExecSQL;
+       frmEmendasNew.qyVE_.Open;
+
+       frmEmendasNew.lbVereador.Caption := frmEmendasNew.qyVE_Vereador.Value;
+   End;
+
+    IF FrmEmendasGeral <> nil then
+   Begin
+       FrmEmendasGeral.qyVE_.Close;
+       FrmEmendasGeral.qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+       FrmEmendasGeral.qyVE_.ExecSQL;
+       FrmEmendasGeral.qyVE_.Open;
+
+       FrmEmendasGeral.CodVereador := qyVE_Codigo_Vereador.Value;
+       FrmEmendasGeral.lbVereador.Caption := FrmEmendasGeral.qyVE_Vereador.Value;
+   End;
+
+   ShowMessage('OPERAÇÃO CONCLUÍDA!!!');
+   btCancelar.OnClick(nIL);
+
+   btFechar.SetFocus;
+
+   edCod.Enabled       := false;
+   cbPesq.Enabled      := false;
+   btAdicionar.Enabled := False;
+   btCancelar.Enabled  := false;
+
+end;
+
+procedure TFrmVereadoresEmendas.btCancelarClick(Sender: TObject);
+begin
+   edCod.Clear;
+   cbPesq.Clear;
+   Pesq('');
+   btAdicionar.Enabled := false;
+   cbPesq.SetFocus;
+end;
+
+procedure TFrmVereadoresEmendas.btExcluirClick(Sender: TObject);
+Var
+  CodVer : Integer;
+begin
+
+   {
+   SELECT * FROM VEREADORES_EMENDAS
+   WHERE EMENDA = :EMENDA
+   }
+
+   If Trim(edCod.Text) = '' Then
+   Begin
+      ShowMessage('O Vereador tem que ser informado!!!');
+      Exit;
+   End;
+
+   If Trim(edEmenda.Text) = '' Then
+   Begin
+      ShowMessage('O Número da Emenda tem que existir!!!');
+      Exit;
+   End;
+
+
+   CodVer := StrToInt(edCod.Text) ;
+
+   qyVE_.Close;
+   qyVE_.SQL.Clear;
+   qyVE_.SQL.Add('SELECT * FROM VEREADORES_EMENDAS');
+   qyVE_.SQL.Add('WHERE EMENDA = :EMENDA');
+   qyVE_.SQL.Add('and CODIGO_VEREADOR = :VEREADOR');
+   qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+   qyVE_.Parameters.ParamByName('VEREADOR').Value := CodVer;
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+
+   if qyVE_.RecordCount = 0 then
+   Begin
+      ShowMessage('Nenhum dado foi encontrado para esta pesquisa');
+      edCod.SetFocus;
+      exit;
+   End;
+
+
+
+   if application.messageBox('Confirma a Exclusão do Registro ?','EXCLUSÃO',
+      MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   qyVE_.Delete;
+
+   ShowMessage('Vereador Excluído para esta emenda!!!');
+
+   qyVE_.Close;
+   qyVE_.SQL.Clear;
+   qyVE_.SQL.Add('SELECT * FROM VEREADORES_EMENDAS');
+   qyVE_.SQL.Add('WHERE EMENDA = :EMENDA');
+   qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+   qyVE_.ExecSQL;
+   qyVE_.Open;
+
+   If frmEmendasNew <> nil then
+   Begin
+       frmEmendasNew.qyVE_.Close;
+       frmEmendasNew.qyVE_.Parameters.ParamByName('EMENDA').Value   := edEmenda.Text;
+       frmEmendasNew.qyVE_.ExecSQL;
+       frmEmendasNew.qyVE_.Open;
+       If frmEmendasNew.qyVE_.RecordCount = 1 then
+          frmEmendasNew.lbVereador.Caption := frmEmendasNew.qyVE_Vereador.Value
+       else
+          frmEmendasNew.lbVereador.Caption :='SEM VEREADOR PARA ESTA EMENDA';
+   End;
+
+   edCod.Enabled       := True;
+   cbPesq.Enabled      := True;
+   edCod.Text  := '';
+   cbPesq.Text := '';
+   Pesq('');
+   btAdicionar.Enabled := True;
+   btCancelar.Enabled  := True;
+   cbPesq.SetFocus;
+
+
+end;
+
+procedure TFrmVereadoresEmendas.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+   If vk_F3 = KEY THEN btAdicionar.OnClick(nil);
+   If vk_F4 = KEY THEN btCancelar.OnClick(nil);
+   If vk_F6 = KEY THEN btExcluir.OnClick(nil);
+   If vk_F7 = KEY THEN btFechar.OnClick(nil);
+end;
+
+procedure TFrmVereadoresEmendas.DBGrid1DblClick(Sender: TObject);
+begin
+   edCod.Enabled       := True;
+   cbPesq.Enabled      := True;
+   btAdicionar.Enabled := True;
+   btCancelar.Enabled  := True;
+
+   edCod.Text   := qyVE_Codigo_Vereador.AsString;
+   cbPesq.Text  := qyVE_Vereador.AsString;
+   btExcluir.SetFocus;
+
+end;
+
+end.
+

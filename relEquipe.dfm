@@ -1,0 +1,185 @@
+object frmRelEquipe: TfrmRelEquipe
+  Left = 147
+  Top = 258
+  Width = 720
+  Height = 480
+  VertScrollBar.Position = 38
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  OldCreateOrder = False
+  Scaled = False
+  PixelsPerInch = 96
+  TextHeight = 13
+  object report: TQuickRep
+    Left = 24
+    Top = -6
+    Width = 794
+    Height = 1123
+    Frame.Color = clBlack
+    Frame.DrawTop = False
+    Frame.DrawBottom = False
+    Frame.DrawLeft = False
+    Frame.DrawRight = False
+    DataSet = qyEquipe_
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'Arial'
+    Font.Style = []
+    Functions.Strings = (
+      'PAGENUMBER'
+      'COLUMNNUMBER'
+      'REPORTTITLE')
+    Functions.DATA = (
+      '0'
+      '0'
+      #39#39)
+    Options = [FirstPageHeader, LastPageFooter]
+    Page.Columns = 1
+    Page.Orientation = poPortrait
+    Page.PaperSize = A4
+    Page.Values = (
+      200
+      2970
+      200
+      2100
+      200
+      150
+      0)
+    PrinterSettings.Copies = 1
+    PrinterSettings.Duplex = False
+    PrinterSettings.FirstPage = 0
+    PrinterSettings.LastPage = 0
+    PrinterSettings.OutputBin = Auto
+    PrintIfEmpty = True
+    SnapToGrid = True
+    Units = MM
+    Zoom = 100
+    object detail: TQRBand
+      Left = 76
+      Top = 139
+      Width = 662
+      Height = 24
+      Frame.Color = clBlack
+      Frame.DrawTop = False
+      Frame.DrawBottom = False
+      Frame.DrawLeft = False
+      Frame.DrawRight = False
+      AlignToBottom = False
+      BeforePrint = detailBeforePrint
+      Color = clWhite
+      ForceNewColumn = False
+      ForceNewPage = False
+      Size.Values = (
+        63.5
+        1751.54166666667)
+      BandType = rbDetail
+      object entidade: TQRDBText
+        Left = 2
+        Top = 2
+        Width = 660
+        Height = 19
+        Frame.Color = clBlack
+        Frame.DrawTop = False
+        Frame.DrawBottom = False
+        Frame.DrawLeft = False
+        Frame.DrawRight = False
+        Size.Values = (
+          50.2708333333333
+          5.29166666666667
+          5.29166666666667
+          1746.25)
+        Alignment = taLeftJustify
+        AlignToBand = False
+        AutoSize = False
+        AutoStretch = True
+        Color = clWhite
+        DataSet = qyEquipe_
+        DataField = 'Titulo'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Trebuchet MS'
+        Font.Style = []
+        ParentFont = False
+        Transparent = False
+        WordWrap = True
+        FontSize = 10
+      end
+    end
+    object PageHeaderBand1: TQRBand
+      Left = 76
+      Top = 76
+      Width = 662
+      Height = 63
+      Frame.Color = clBlack
+      Frame.DrawTop = False
+      Frame.DrawBottom = False
+      Frame.DrawLeft = False
+      Frame.DrawRight = False
+      AlignToBottom = False
+      Color = clWhite
+      ForceNewColumn = False
+      ForceNewPage = False
+      Size.Values = (
+        166.6875
+        1751.54166666667)
+      BandType = rbPageHeader
+    end
+  end
+  object QRPDFFilter1: TQRPDFFilter
+    AutoLaunch = False
+    Compression = ctNone
+    DocumentInfo_Author = 'Windows 9x/NT/2000/XP User'
+    DocumentInfo_Creator = 'llPDFLib program'
+    DocumentInfo_Keywords = 'llPDFLib'
+    DocumentInfo_Subject = 'None'
+    DocumentInfo_Title = 'No Title'
+    PageLayout = plSinglePage
+    PageMode = pmUseNone
+    ProtectionEnabled = False
+    ProtectionOptions = []
+    JPEGQuality = 80
+    Left = 80
+    Top = 40
+  end
+  object qyEquipe_: TADOQuery
+    Connection = frmPrincipalFolha.adFolha
+    CursorType = ctStatic
+    Parameters = <>
+    SQL.Strings = (
+      'SELECT Tipo, Titulo, Titular, tam, Negrito'
+      'FROM Folhas'
+      'WHERE   (Tipo = '#39'E'#39')  '
+      'order by Ordem')
+    Left = 24
+    Top = 40
+    object qyEquipe_Tipo: TStringField
+      FieldName = 'Tipo'
+      FixedChar = True
+      Size = 1
+    end
+    object qyEquipe_Titulo: TStringField
+      FieldName = 'Titulo'
+      Size = 100
+    end
+    object qyEquipe_Titular: TStringField
+      FieldName = 'Titular'
+      Size = 100
+    end
+    object qyEquipe_tam: TStringField
+      FieldName = 'tam'
+      FixedChar = True
+      Size = 10
+    end
+    object qyEquipe_Negrito: TStringField
+      FieldName = 'Negrito'
+      FixedChar = True
+      Size = 10
+    end
+  end
+end

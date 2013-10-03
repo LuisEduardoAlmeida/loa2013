@@ -1,0 +1,27 @@
+object frmCadEmendas: TfrmCadEmendas
+  Left = 2
+  Top = 107
+  Width = 1017
+  Height = 628
+  Caption = 'Cadastro de Emendas'
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Font.Style = []
+  KeyPreview = True
+  OldCreateOrder = False
+  OnClose = FormClose
+  OnKeyPress = FormKeyPress
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pndownbar: TPanel
+    Left = 0
+    Top = 542
+    Width = 1001
+    Height = 50
+    Align = alBottom
+    TabOrder = 0
+  end
+end

@@ -1,0 +1,234 @@
+unit SelRelatorio;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, Buttons, ExtCtrls;
+
+type
+  TFrmTipoDetalhado = class(TForm)
+    RadioGroup1: TRadioGroup;
+    BitBtn1: TBitBtn;
+    BitBtn2: TBitBtn;
+    procedure BitBtn1Click(Sender: TObject);
+    procedure BitBtn2Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+     Unorc,funcao,subfuncao,programa,acao,iu,fonte,eldespesa : string;
+     elReceita,receitaD,esfera,recurso,cat,grupo,subGrupo,rubrica : string;
+     alinea,desdobra,valor, descricao : string;
+  end;
+
+var
+  FrmTipoDetalhado: TFrmTipoDetalhado;
+
+implementation
+
+uses RelDetalhado, HWarning, RelGerencial;
+
+{$R *.dfm}
+
+procedure TFrmTipoDetalhado.BitBtn1Click(Sender: TObject);
+var la : string;
+begin
+    while RadioGroup1.ItemIndex = -1  do
+    begin
+        exit;
+    end;
+
+        if RadioGroup1.ItemIndex = 0 then
+        begin
+            ShowWarning('CARREGANDO LISTAGEM, AGUARDE...');
+            Application.CreateForm(TFrmRelDetalhado, FrmRelDetalhado);
+
+            FrmRelDetalhado.Unorc       := Unorc;
+            FrmRelDetalhado.funcao      := Funcao;
+            FrmRelDetalhado.subfuncao   := SubFuncao;
+            FrmRelDetalhado.programa    := programa;
+            FrmRelDetalhado.acao        := acao;
+            FrmRelDetalhado.iu          := IU;
+            FrmRelDetalhado.fonte       := Fonte;
+            FrmRelDetalhado.eldespesa   := eldespesa;
+            FrmRelDetalhado.eldespesa   := eldespesa;
+                                                                                                                                  
+            la := ' SELECT o.Unorc, o.Unorcd,o.Funcao,o.SubFuncao, o.Programa,o.Acao, o.Localis, o.Descricao                      '+
+                  ' ,e.descricao as elDespesaD,o.eldespesa, o.induso,o.fonte,CASE WHEN sum(o.valor) is not NULL THEN sum(o.valor) '+
+                  ' else 0 end as total  FROM ORCAMENTO o                                                                         '+
+                  ' left join eldespesa e on e.codigo = eldespesa                                                                 ';
+
+
+
+            FrmRelDetalhado.qryEsfera.Active := False;
+            FrmRelDetalhado.qryEsfera.Close;
+            FrmRelDetalhado.qryEsfera.SQL.Clear;
+            FrmRelDetalhado.qryEsfera.SQL.Add(la);
+            FrmRelDetalhado.qryEsfera.SQL.Add(' where 1= 1 ');
+            if Trim(Unorc) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.unorc = :unorc');// Unorc
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('unorc').Value := Unorc;
+
+            End;
+
+            if Trim(Funcao) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.Funcao = :Funcao');// Funcao
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('Funcao').Value := Funcao;
+            End;
+
+            if Trim(SubFuncao) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.SUBFUNCAO = :SUBFUNCAO'); // SubFuncao
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('SUBFUNCAO').Value := SubFuncao;
+            End;
+
+            if Trim(programa) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.Programa = :Programa');                // Indicador de Uso
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('Programa').Value := programa;
+            End;
+
+            if Trim(acao) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.Acao = :Acao');                // Indicador de Uso
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('Acao').Value := acao;
+            End;
+
+            if Trim(IU) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.IndUso = :IndUso');                // Indicador de Uso
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('IndUso').Value := IU;
+            End;
+
+            if Trim(Fonte) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.FONTE = :FONTE');          // Fonte
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('FONTE').Value := Fonte;
+            End;
+
+            if Trim(eldespesa) <> '' Then
+            Begin
+                FrmRelDetalhado.qryEsfera.SQL.Add('and o.eldespesa = :ELDESPESA');   // Elemento de Despesa
+                FrmRelDetalhado.qryEsfera.Parameters.ParamByName('ELDESPESA').Value := eldespesa;
+            End;
+
+            if Trim(descricao) <> '' Then
+            Begin
+               FrmRelDetalhado.qryEsfera.SQL.Add('and o.Descricao like (''%'+descricao+'%'') ');
+            End;
+
+            FrmRelDetalhado.qryEsfera.SQL.Add(' GROUP BY o.Unorc, o.Unorcd,o.Funcao                             ');
+            FrmRelDetalhado.qryEsfera.SQL.Add(' ,o.SubFuncao, o.Programa, o.Acao, o.Localis,o.Descricao         ');
+            FrmRelDetalhado.qryEsfera.SQL.Add(  ' ,e.descricao,o.eldespesa, o.induso,o.fonte, o.valor           ');
+            FrmRelDetalhado.qryEsfera.SQL.Add(' ORDER BY o.Unorc, o.Unorcd,o.Funcao,o.SubFuncao, o.Programa,    ');
+            FrmRelDetalhado.qryEsfera.SQL.Add('  o.Acao, o.Localis,o.Eldespesa, o.Fonte,  o.IndUso              ');
+
+            FrmRelDetalhado.qryEsfera.ExecSQL;
+            FrmRelDetalhado.qryEsfera.Open;
+
+            HideWarning;
+            FrmRelDetalhado.report.Preview;
+            FrmRelDetalhado.qryEsfera.Close;
+            FrmRelDetalhado.Free;
+     end;
+     if RadioGroup1.ItemIndex = 1 then
+        begin
+            ShowWarning('CARREGANDO LISTAGEM, AGUARDE...');
+            Application.CreateForm(TFrmRelGerencial, FrmRelGerencial);
+
+            FrmRelGerencial.Unorc       := Unorc;
+            FrmRelGerencial.funcao      := Funcao;
+            FrmRelGerencial.subfuncao   := SubFuncao;
+            FrmRelGerencial.programa    := programa;
+            FrmRelGerencial.acao        := acao;
+            FrmRelGerencial.iu          := IU;
+            FrmRelGerencial.fonte       := Fonte;
+            FrmRelGerencial.eldespesa   := eldespesa;
+            FrmRelGerencial.descricao   := descricao;
+
+            FrmRelGerencial.qryEsfera.Active := False;
+            FrmRelGerencial.qryEsfera.Close;
+            FrmRelGerencial.qryEsfera.SQL.Clear;
+            FrmRelGerencial.qryEsfera.SQL.Add(' SELECT Unorc, Unorcd, Funcional = Funcao+''.''+SubFuncao+''.''+Programa+''.''+Acao+''.''+Localis+''  ''+Descricao, ');
+            FrmRelGerencial.qryEsfera.SQL.Add(' Funcao, SubFuncao, Programa, Acao, Localis,Descricao,sum(Valor) ');
+            FrmRelGerencial.qryEsfera.SQL.Add(' FROM ORCAMENTO ');
+//            FrmRelGerencial.qryEsfera.SQL.Add(' left join eldespesa e on e.codigo = eldespesa ');
+            FrmRelGerencial.qryEsfera.SQL.Add(' where codigo is not null ');
+
+
+            if Trim(Unorc) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and unorc = :unorc');// Unorc
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('unorc').Value := Unorc;
+
+            End;
+
+            if Trim(Funcao) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and Funcao = :Funcao');// Funcao
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('Funcao').Value := Funcao;
+            End;
+
+            if Trim(SubFuncao) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and SUBFUNCAO = :SUBFUNCAO'); // SubFuncao
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('SUBFUNCAO').Value := SubFuncao;
+            End;
+
+            if Trim(programa) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and Programa = :Programa');                // Indicador de Uso
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('Programa').Value := programa;
+            End;
+
+            if Trim(acao) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and Acao = :Acao');                // Indicador de Uso
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('Acao').Value := acao;
+            End;
+
+            if Trim(IU) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and IndUso = :IndUso');                // Indicador de Uso
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('IndUso').Value := IU;
+            End;
+
+            if Trim(Fonte) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and FONTE = :FONTE');          // Fonte
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('FONTE').Value := Fonte;
+            End;
+
+            if Trim(eldespesa) <> '' Then
+            Begin
+                FrmRelGerencial.qryEsfera.SQL.Add('and ELDESPESA = :ELDESPESA');   // Elemento de Despesa
+                FrmRelGerencial.qryEsfera.Parameters.ParamByName('ELDESPESA').Value := eldespesa;
+            End;
+
+            if Trim(descricao) <> '' Then
+            Begin
+               FrmRelGerencial.qryEsfera.SQL.Add('and Descricao LIKE (''%'+descricao+'%'') ');
+            End;
+
+            FrmRelGerencial.qryEsfera.SQL.Add(' GROUP by Unorc, Unorcd, Funcao, SubFuncao, Programa, Acao, Localis,Descricao ');
+            FrmRelGerencial.qryEsfera.SQL.Add(' ORDER BY Unorc, Unorcd,Funcao,SubFuncao, Programa, Acao, Localis ');
+            FrmRelGerencial.qryEsfera.ExecSQL;
+            FrmRelGerencial.qryEsfera.Open;
+
+            HideWarning;
+            FrmRelGerencial.report.Preview;
+            FrmRelGerencial.qryEsfera.Close;
+            FrmRelGerencial.Free;
+     end;
+end;
+
+procedure TFrmTipoDetalhado.BitBtn2Click(Sender: TObject);
+begin
+    Close;
+end;
+
+end.
+

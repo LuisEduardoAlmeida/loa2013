@@ -1,0 +1,658 @@
+unit UnoImpRelat2;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, StdCtrls, Buttons, CheckLst, ComCtrls, DB, ADODB,
+  DBTables, Grids, DBGrids, QRexport, dxCore, dxButton, QuickRpt,
+  QRPDFFilter;
+
+type
+  TfrmUnoImpRelat2 = class(TForm)
+    Shape1: TShape;
+    Shape2: TShape;
+    Label1: TLabel;
+    Shape3: TShape;
+    SpeedButton1: TSpeedButton;
+    Shape4: TShape;
+    Bevel2: TBevel;
+    qry: TADOQuery;
+    sQry: TDataSource;
+    Shape6: TShape;
+    RichEdit1: TRichEdit;
+    qrycodigo: TStringField;
+    qrydescricao: TStringField;
+    qryorgaoS: TStringField;
+    qryorgaoD: TStringField;
+    ADOQuery1: TADOQuery;
+    StringField1: TStringField;
+    StringField2: TStringField;
+    StringField3: TStringField;
+    StringField4: TStringField;
+    DataSource1: TDataSource;
+    RgTipo_: TRadioGroup;
+    Bevel1: TBevel;
+    CkB_: TCheckListBox;
+    btTodos: TdxButton;
+    btTirar: TdxButton;
+    ckSelecao: TCheckBox;
+    chkRelato: TCheckListBox;
+    Button1: TButton;
+    QRCompositeReport1: TQRCompositeReport;
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure Button2Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure btTodosClick(Sender: TObject);
+    procedure btTirarClick(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure FormKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure CkB_Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure QRCompositeReport1AddReports(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    CExportFilter : TQRCSVFilter;
+    Lista_SQL : String;
+    Procedure ListaOrgaos();
+    Procedure Pesquisa(Parametro: String);
+  end;
+
+var
+  frmUnoImpRelat2: TfrmUnoImpRelat2;
+implementation
+
+uses data, acaoList, orgSintFun, orgFonte, orgSintUnorc, orgCatDesp,
+  orgNatDesp, unoSintFun, unoFonte, unoCatDesp, unoNatDesp, unoQDD,
+  main, UnoIndUsoFonte, UnoQDDTodos, unoDetAcoes, unoDet, UnoImpRelat;
+
+{$R *.dfm}
+
+procedure TfrmUnoImpRelat2.SpeedButton1Click(Sender: TObject);
+begin
+  close;
+end;
+
+procedure TfrmUnoImpRelat2.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+   Action := caFree;
+   frmUnoImpRelat2 := nil;
+end;
+
+procedure TfrmUnoImpRelat2.Button2Click(Sender: TObject);
+Var
+  i ,c : integer;
+  todos : string;
+begin
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[i] Then
+       Begin
+
+          Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+          Application.CreateForm(TfrmUnoSintFun, frmUnoSintFun);
+          frmUnoSintFun.QRDBText2.DataSet := qry;
+          frmUnoSintFun.QRDBText3.DataSet := qry;
+          frmUnoSintFun.QRDBText5.DataSet := qry;
+          frmUnoSintFun.QRDBText6.DataSet := qry;
+          frmUnoSintFun.qryColUm.DataSource   := sQry;
+          frmUnoSintFun.qryColDois.DataSource := sQry;
+          frmUnoSintFun.qryColTres.DataSource := sQry;
+          frmUnoSintFun.qryTot.DataSource     := sQry;
+
+ 
+          If RgTipo_.ItemIndex = 0 then
+             frmUnoSintFun.report.Preview
+          else
+             frmUnoSintFun.report.Print;
+
+          frmUnoSintFun.Free;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+
+
+       End;
+   End;
+
+end;
+
+procedure TfrmUnoImpRelat2.Button4Click(Sender: TObject);
+Var
+  i,c : integer;
+  todos : string;
+begin
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[i] Then
+       Begin
+
+          Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+          Application.CreateForm(TfrmUnoFonte, frmUnoFonte);
+          frmUnoFonte.qryTot.DataSource := sQry;
+          frmUnoFonte.QRDBText19.DataSet := qry;
+          frmUnoFonte.QRDBText20.DataSet := qry;
+          frmUnoFonte.QRDBText21.DataSet := qry;
+          frmUnoFonte.QRDBText22.DataSet := qry;
+          frmUnoFonte.pulapage := false;
+          If RgTipo_.ItemIndex = 0 then
+             frmUnoFonte.report.Preview
+          else
+             frmUnoFonte.report.print;
+
+          frmUnoFonte.free;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+
+       End;
+   End;
+end;
+
+procedure TfrmUnoImpRelat2.Button5Click(Sender: TObject);
+Var
+  i,c : integer;
+  todos : string;
+begin
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[i] Then
+       Begin
+
+          Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+          Application.CreateForm(TfrmUnoCatDesp, frmUnoCatDesp);
+          frmUnoCatDesp.qryCat.DataSource     := sQry;
+          frmUnoCatDesp.QRDBText19.DataSet := qry;
+          frmUnoCatDesp.QRDBText20.DataSet := qry;
+          frmUnoCatDesp.QRDBText4.DataSet  := qry;
+          frmUnoCatDesp.QRDBText5.DataSet  := qry;
+          frmUnoCatDesp.pulapage := false;
+          If RgTipo_.ItemIndex = 0 then
+             frmUnoCatDesp.report.Preview
+          else
+             frmUnoCatDesp.report.print;
+
+          frmUnoCatDesp.free;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+
+
+       End;
+   End;
+
+end;
+
+procedure TfrmUnoImpRelat2.Button6Click(Sender: TObject);
+Var
+  i,c : integer;
+  todos : string;
+begin
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[i] Then
+       Begin
+
+          Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+          Application.CreateForm(TfrmUnoDetAcoes, frmUnoDetAcoes);
+          frmUnoDetAcoes.QRDBText19.DataSet  := qry;
+          frmUnoDetAcoes.QRDBText20.DataSet  := qry;
+          frmUnoDetAcoes.QRDBText4.DataSet   := qry;
+          frmUnoDetAcoes.QRDBText5.DataSet   := qry;
+          frmUnoDetAcoes.qryProg.DataSource  := sQry;
+          frmUnoDetAcoes.pulapage := false;
+          frmUnoDetAcoes.TitleBand1.Enabled  := False;
+          If RgTipo_.ItemIndex = 0 then
+             frmUnoDetAcoes.report.Preview
+          else
+             frmUnoDetAcoes.report.print;
+
+          frmUnoDet.free;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+
+
+       End;
+   End;
+
+end;
+
+procedure TfrmUnoImpRelat2.Button7Click(Sender: TObject);
+Var   i ,c : integer;
+  todos : string;
+begin
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[i] Then
+       Begin
+
+          Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+          Application.CreateForm(TfrmUnoQDD, frmUnoQDD);
+          frmUnoQDD.QRDBText19.DataSet  := qry;
+          frmUnoQDD.QRDBText20.DataSet  := qry;
+          frmUnoQDD.QRDBText4.DataSet   := qry;
+          frmUnoQDD.QRDBText5.DataSet   := qry;
+          frmUnoQDD.qryEsfera.DataSource := sQry;
+          frmUnoQDD.pulapage := false;
+          If RgTipo_.ItemIndex = 0 then
+             frmUnoQDD.report.Preview
+          else
+             frmUnoQDD.report.print;
+
+          frmUnoQDD.Free;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+
+
+       End;
+   End;
+
+end;
+
+procedure TfrmUnoImpRelat2.ListaOrgaos;
+begin
+   qry.Close;
+   qry.open;
+   qry.First;
+
+   while not qry.Eof do
+   Begin
+//      if copy(qrycodigo.Value,3.3) = '000' then
+         CkB_.Items.Add(qrycodigo.Value +' - '+qrydescricao.Value);
+//      else
+  //       CkB_.Items.Add(nil,qrycodigo.Value+' - '+qrydescricao.Value);
+      qry.Next;
+   End;
+end;
+
+procedure TfrmUnoImpRelat2.FormCreate(Sender: TObject);
+begin
+   If sQry.State in [dsinactive] then qry.Open;
+   Lista_SQL := qry.SQL.Text;
+   ListaOrgaos;
+end;
+
+procedure TfrmUnoImpRelat2.Pesquisa(Parametro: String);
+begin
+   qry.Close;
+   qry.SQL.Clear;
+   qry.SQL.Add(Lista_SQL);
+   qry.SQL.Add('Where U.Codigo = :Param');
+   qry.Parameters.ParamByName('Param').Value := Parametro;
+   qry.ExecSQL;
+   qry.Open;
+end;
+
+procedure TfrmUnoImpRelat2.btTodosClick(Sender: TObject);
+Var
+  I : integer;
+begin
+    For i := 0 to CkB_.Count - 1 do
+        CkB_.Checked[i] := True;
+
+end;
+
+procedure TfrmUnoImpRelat2.btTirarClick(Sender: TObject);
+Var
+ i : integer;
+begin
+    For i := 0 to CkB_.Count - 1 do
+        CkB_.Checked[i] := False;
+end;
+
+procedure TfrmUnoImpRelat2.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+   If key = #13 Then
+   Begin
+      Perform(WM_NEXTDLGCTL,0,0);
+      key := #0;
+   End;
+end;
+
+procedure TfrmUnoImpRelat2.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+   If key = vk_F2 Then
+      btTodos.OnClick(nil);
+   If key = vk_F3 Then
+      btTirar.OnClick(nil);
+end;
+
+procedure TfrmUnoImpRelat2.CkB_Click(Sender: TObject);
+Var
+  i : integer;
+begin
+    If CkB_.Checked[CkB_.ItemIndex] then
+    Begin
+       //CkB_.Checked[CkB_.ItemIndex]
+    End;
+
+end;
+
+procedure TfrmUnoImpRelat2.Button1Click(Sender: TObject);
+Var   i,c : integer;
+      Todos,lu : string;
+begin
+
+   For c := 0 to CkB_.Count -1 do
+   Begin
+       If CkB_.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           todos := 'Nao';
+
+       end;
+
+   end;
+  { For c := 0 to chkRelato.Count -1 do
+   Begin
+       If chkRelato.Checked[c] Then todos := 'Sim'
+       else
+       begin
+           ShowMessage('Selecione ao de menos um tipo de relatório a ser gerado');
+           Exit;
+       end;
+
+   end;}
+   if Todos= 'Sim' then
+   begin
+      If RgTipo_.ItemIndex = 0 then
+         if application.messageBox('Deseja Realmete Visualizar Todos os Relatórios ?','Visualizar',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+      If RgTipo_.ItemIndex = 1 then
+         if application.messageBox('Deseja Realmete Imprimir Todos os Relatórios ?','Impressão',
+            MB_ICONQUESTION+MB_YESNO) = IDno then Exit;
+       lu :='1 = 1';
+       For c := 0 to chkRelato.Count -1 do
+       Begin
+           lu := lu +' and unorc = '''+(Copy(CkB_.Items.Strings[i],1,5))+'''';
+       end;
+   end;
+   For i := 0 to CkB_.Count -1 do
+   Begin
+      with QRCompositeReport1 do
+      begin
+   //-------------- Quadro Sintese da Orgao ---------------------------------------------//
+         If CkB_.Checked[i] Then
+         Begin
+           Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+           if chkRelato.Checked[0] then
+           begin
+               Application.CreateForm(TfrmOrgSintFun, frmOrgSintFun);
+               frmOrgSintFun.QRDBText2.DataSet := qry;
+               frmOrgSintFun.QRDBText3.DataSet := qry;
+               //frmOrgSintFun.QRDBText5.DataSet := qry;
+               //frmOrgSintFun.QRDBText6.DataSet := qry;
+               frmOrgSintFun.qryColUm.DataSource   := sQry;
+               frmOrgSintFun.qryColDois.DataSource := sQry;
+               frmOrgSintFun.qryColTres.DataSource := sQry;
+               frmOrgSintFun.qryTot.DataSource     := sQry;
+               Reports.Add(frmOrgSintFun.report);
+           end;
+//-------------- Total por Fonte dos Orgão ---------------------------------------------//
+           Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+           if chkRelato.Checked[1] then
+           begin
+              Application.CreateForm(TfrmOrgFonte, frmOrgFonte);
+              frmOrgFonte.qryTot.DataSource := sQry;
+              frmOrgFonte.QRDBText19.DataSet := qry;
+              frmOrgFonte.QRDBText20.DataSet := qry;
+              //frmOrgFonte.QRDBText21.DataSet := qry;
+              //frmOrgFonte.QRDBText22.DataSet := qry;
+              Reports.Add(frmOrgFonte.report);
+           end;
+//-------------- Total por Fonte dos Orgão ---------------------------------------------//           
+           if chkRelato.Checked[2] then
+           begin
+              Application.CreateForm(TfrmOrgSintUnorc, frmOrgSintUnorc);
+
+              // Application.CreateForm(TfrmUnoDet, frmUnoDet);
+              // frmUnoDet.QRDBText4.DataSet   := qry;
+              // rmUnoDet.QRDBText5.DataSet   := qry;
+
+              frmOrgSintUnorc.QRDBText19.DataSet  := qry;
+              frmOrgSintUnorc.QRDBText20.DataSet  := qry;
+              frmOrgSintUnorc.qry.DataSource  := sQry;
+              Reports.Add(frmOrgSintUnorc.report);
+
+           end;
+           if chkRelato.Checked[3] then
+           begin
+              Application.CreateForm(TfrmOrgCatDesp, frmOrgCatDesp);
+              frmOrgCatDesp.qryCat.DataSource     := sQry;
+              frmOrgCatDesp.QRDBText19.DataSet := qry;
+              frmOrgCatDesp.QRDBText20.DataSet := qry;
+              //frmOrgCatDesp.QRDBText4.DataSet  := qry;
+              //frmOrgCatDesp.QRDBText5.DataSet  := qry;
+              Reports.Add(frmOrgCatDesp.report);
+           end;
+
+             Pesquisa(Copy(CkB_.Items.Strings[i],1,5));
+
+//-------------- Quadro Sintese da Unidade Orcamentaria ---------------------------------------------//
+            if chkRelato.Checked[4] then
+            begin
+                Application.CreateForm(TfrmUnoSintFun, frmUnoSintFun);
+                frmUnoSintFun.QRDBText2.DataSet := qry;
+                frmUnoSintFun.QRDBText3.DataSet := qry;
+                frmUnoSintFun.QRDBText5.DataSet := qry;
+                frmUnoSintFun.QRDBText6.DataSet := qry;
+                frmUnoSintFun.qryColUm.DataSource   := sQry;
+                frmUnoSintFun.qryColDois.DataSource := sQry;
+                frmUnoSintFun.qryColTres.DataSource := sQry;
+                frmUnoSintFun.qryTot.DataSource     := sQry;
+
+                Reports.Add(frmUnoSintFun.report);
+            end;
+
+
+//-------------- Total por Fonte da Unidade Orcamentaria --------------------------------------------//
+            if chkRelato.Checked[5] then
+            begin
+                Application.CreateForm(TfrmUnoFonte, frmUnoFonte);
+                frmUnoFonte.qryTot.DataSource := sQry;
+                frmUnoFonte.QRDBText19.DataSet := qry;
+                frmUnoFonte.QRDBText20.DataSet := qry;
+                frmUnoFonte.QRDBText21.DataSet := qry;
+                frmUnoFonte.QRDBText22.DataSet := qry;
+                frmUnoFonte.pulapage := true;
+                Reports.Add(frmUnoFonte.report);
+            end;
+//-------------- Desmostrativo da Despesa da Unidade Orcamentaria ----------------------------------//
+            if chkRelato.Checked[6] then
+            begin
+                Application.CreateForm(TfrmUnoCatDesp, frmUnoCatDesp);
+                frmUnoCatDesp.qryCat.DataSource     := sQry;
+                frmUnoCatDesp.QRDBText19.DataSet := qry;
+                frmUnoCatDesp.QRDBText20.DataSet := qry;
+                frmUnoCatDesp.QRDBText4.DataSet  := qry;
+                frmUnoCatDesp.QRDBText5.DataSet  := qry;
+                frmUnoCatDesp.pulapage := true;
+                Reports.Add(frmUnoCatDesp.report);
+            end;
+//-------------- Detalhamento da Ações da Unidade Orcamentaria -------------------------------------//
+            if chkRelato.Checked[7] then
+            begin
+                Application.CreateForm(TfrmUnoDetAcoes, frmUnoDetAcoes);
+                frmUnoDetAcoes.QRDBText19.DataSet  := qry;
+                frmUnoDetAcoes.QRDBText20.DataSet  := qry;
+                frmUnoDetAcoes.QRDBText4.DataSet   := qry;
+                frmUnoDetAcoes.QRDBText5.DataSet   := qry;
+                frmUnoDetAcoes.qryProg.DataSource  := sQry;
+                frmUnoDetAcoes.pulapage := true;
+                frmUnoDetAcoes.TitleBand1.Enabled  := True;
+                Reports.Add(frmUnoDetAcoes.report);
+            end;
+//--------------Quadro de Detalhamento da Despesa da Unidade Orcamentaria --------------------------//
+            if chkRelato.Checked[8] then
+               begin
+                Application.CreateForm(TfrmUnoQDD, frmUnoQDD);
+                frmUnoQDD.QRDBText19.DataSet  := qry;
+                frmUnoQDD.QRDBText20.DataSet  := qry;
+                frmUnoQDD.QRDBText4.DataSet   := qry;
+                frmUnoQDD.QRDBText5.DataSet   := qry;
+                frmUnoQDD.qryEsfera.DataSource := sQry;
+                frmUnoQDD.pulapage := true;
+                Reports.Add(frmUnoQDD.report);
+            end;
+
+          If ckSelecao.Checked then
+          Begin
+             CkB_.ItemIndex := i;
+             CkB_.Checked[i] := false;
+          End;
+      end;
+       End;
+   End;
+   QRCompositeReport1.Prepare;
+   if RgTipo_.ItemIndex = 0 then QRCompositeReport1.Preview    else  QRCompositeReport1.Print;
+
+
+end;
+
+procedure TfrmUnoImpRelat2.QRCompositeReport1AddReports(Sender: TObject);
+begin
+    if chkRelato.Checked[0] then QRCompositeReport1.Reports.Add(frmOrgSintFun.report);
+    if chkRelato.Checked[1] then QRCompositeReport1.Reports.Add(frmOrgFonte.report);
+    if chkRelato.Checked[2] then QRCompositeReport1.Reports.Add(frmOrgSintUnorc.report);
+    if chkRelato.Checked[3] then QRCompositeReport1.Reports.Add(frmOrgCatDesp.report);
+    if chkRelato.Checked[4] then QRCompositeReport1.Reports.Add(frmUnoSintFun.report ,frmUnoFonte.report);
+    if chkRelato.Checked[5] then QRCompositeReport1.Reports.Add(frmUnoFonte.report);
+    if chkRelato.Checked[6] then QRCompositeReport1.Reports.Add(frmUnoCatDesp.report);
+    if chkRelato.Checked[7] then QRCompositeReport1.Reports.Add(frmUnoDetAcoes.report);
+    if chkRelato.Checked[8] then QRCompositeReport1.Reports.Add(frmUnoQDD.report);
+
+end;
+
+end.
